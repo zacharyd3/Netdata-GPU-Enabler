@@ -1,0 +1,26 @@
+#!/bin/bash
+
+##############################################
+#                                            #
+#              NetData Patcher               #
+#                                            #
+##############################################
+
+#Before anything, make sure to edit the container and add "--runtime=nvidia" at the end of the "Extra parameters" section
+
+#Get the NetData container ID
+con2="$(docker ps --format "{{.Names}}" | grep -i Netdata)"
+
+#Check to see if netData has already been patched
+exists=$(docker exec -i "$con2" grep -iqe "nvidia_smi: yes" /etc/netdata/python.d.conf >/dev/null 2>&1; echo $?)
+
+#Patch NetData
+echo "<font color='green'><b>Applying netData GPU patch...</b></font>"
+
+if [ "$exists" -eq 1 ]; then
+    docker exec -i "$con2" /bin/sh -c 'echo "nvidia_smi: yes" >> /etc/netdata/python.d.conf'
+    docker restart "$con2" >/dev/null 2>&1
+    echo '<font color="green"><b>Done.</b></font>'
+else
+    echo '<font color="red"><b>Already Applied!</b></font>'
+fi
